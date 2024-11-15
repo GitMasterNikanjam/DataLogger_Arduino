@@ -3,15 +3,32 @@
 DataLogger logger;
 
 void setup() {
-  // put your setup code here, to run once:
-logger.parameters.SDCARD_CS_PIN = 10;
-logger.init();
 
-logger.createHelpFile("data1, data2, data3");
-logger.start();
+  Serial.begin(115200);
+
+  logger.parameters.SDCARD_CS_PIN = 10;
+  logger.parameters.LOG_FRQ = 100;
+
+  if(!logger.init())
+  {
+    Serial.println(logger.errorMessage);
+  }
+
+  logger.createHelpFile("data1, data2, data3");
+  logger.start();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
+  uint32_t T = millis();
+
+  if(T >= 5000)
+  {
+    logger.stop();
+  }
+
+  String data = String(T) + String(sin(T/1000.0), 2) + String(cos(T/1000.0), 2); 
+  logger.write(data);
+
+  delay(2);
 }

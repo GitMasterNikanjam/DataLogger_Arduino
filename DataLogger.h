@@ -26,7 +26,13 @@ class DataLogger
     */
     struct ParametersStructure
     {
+      /// @brief The GPIO pin number for spi chip select of SD card.
       int8_t SDCARD_CS_PIN;
+
+      /**
+        @brief The data log frequency. [Hz]
+      */
+      uint16_t LOG_FRQ;
 
     }parameters;
 
@@ -41,10 +47,19 @@ class DataLogger
     */
     bool init(void);
 
+    /**
+      @brief
+    */
     bool start(void);
 
+    /**
+      @brief
+    */
     bool stop(void);
 
+    /**
+      @brief
+    */
     bool write(String data);
 
     /**
@@ -55,6 +70,11 @@ class DataLogger
   private:
 
     /**
+      @brief The Time at update Log file data on sd card. [ms]
+    */
+    uint32_t _T;
+
+    /**
       @brief Current file that recording data on SDcard.
     */
     File _file;                                  
@@ -63,7 +83,7 @@ class DataLogger
     uint32_t _logNum;
 
     /**
-      @brief 
+      @brief The flag for state of recording mode of data logging.
     */
     bool _loggingFlag;
 
@@ -76,26 +96,8 @@ class DataLogger
     /**
       @brief Create a new log file with new log number. change _logNum value.
     */
-    bool _createNewLog(void);
-
+    bool _updateLogNum(void);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #endif
