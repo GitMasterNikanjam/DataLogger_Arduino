@@ -1,62 +1,85 @@
-#if(SDCARD_ENA == true)
 
-  int init_SD(void)
+// ###########################################################################
+// Include libraries:
+
+#include "DataLogger.h"
+
+// ###########################################################################
+// DataLogger class:
+
+DataLogger::DataLogger()
+{
+  parameters.SDCARD_CS_PIN = -1;
+
+  _logNum = 1;
+}
+
+DataLogger::~DataLogger()
+{
+  
+}
+
+bool DataLogger::init(void)
+{
+  if (!SD.begin(parameters.SDCARD_CS_PIN))
   {
-    if (!SD.begin(SDCARD_CS_PIN))
-    {
-      return 1;
-    }
-    else
-    {
-      SD.remove("log_help.txt");
-      LOG_FILE=SD.open("log_help.txt",FILE_WRITE); 
-      LOG_FILE.println("Time[ms],Throttle[us],Thrust[kg],Torque[N.m],RPM,Voltage_battery[Volt],Amper_battery[A]");
-      LOG_FILE.close();
-      return 0;
-    }
+    errorMessage = "Error DataLogger: SDCard failed, or not present";
+    return false;
   }
 
-  // +++++++++++++++++++++++++++++++++++++++++++
-  void init_SD_Record(void)
-  {
-    if (SD.exists("last_log.txt"))
-    {
-      LOG_FILE=SD.open("last_log.txt",FILE_READ);
-      last_log_file_num=LOG_FILE.readString();
-      last_log_file_num=(String)(last_log_file_num.toInt()+1);
-      LOG_FILE.close();
-      SD.remove("last_log.txt");
-      LOG_FILE=SD.open("last_log.txt",FILE_WRITE);
-      LOG_FILE.print(last_log_file_num);
-      LOG_FILE.close();
-    }
-    else
-    {
-      last_log_file_num="0";
-      LOG_FILE=SD.open("last_log.txt",FILE_WRITE);
-      LOG_FILE.print("0");
-      LOG_FILE.close();
-    }
+  return true;
+}
 
-    LOG_FILE=SD.open("log_"+last_log_file_num+".txt",FILE_WRITE);
-    LOG_FILE.print("Temperature: ");LOG_FILE.print(air.temperature);LOG_FILE.print(" Celsius, ");
-    LOG_FILE.print("Pressure: ");LOG_FILE.print(air.pressure);LOG_FILE.print(" Pa, ");
-    LOG_FILE.print("Density: ");LOG_FILE.print(air.density);LOG_FILE.print(" kg/m^3, ");
-    LOG_FILE.print("Altitude[MSL]: ");LOG_FILE.print(air.altitude);LOG_FILE.println(" m");
-    LOG_FILE.close();
-  }
-  // +++++++++++++++++++++++++++++++++++++++++++
-  void write_SD(void)
+bool DataLogger::createHelpFile(String data)
+{
+  SD.remove("LOG_HELP.txt");
+  _file = SD.open("LOG_HELP.txt",FILE_WRITE); 
+  if(_file)
   {
-    LOG_FILE=SD.open("log_"+last_log_file_num+".txt",FILE_WRITE);
-    LOG_FILE.print(T);LOG_FILE.print(",");
-    LOG_FILE.print(RCIN_value);LOG_FILE.print(",");
-    LOG_FILE.print((float)thrust/1000.0);LOG_FILE.print(",");
-    LOG_FILE.print((float)torque/100.0);LOG_FILE.print(",");
-    LOG_FILE.print(rpm);LOG_FILE.print(",");
-    LOG_FILE.print((float)voltage_battery/1000.0);LOG_FILE.print(",");
-    LOG_FILE.println((float)amper_battery/1000.0);
-    LOG_FILE.close();
+    errorMessage = "Error DataLogger: SDCard failed, or not present";
+    return false;
   }
+  _file.println(data);
+  _file.close();
+}
 
-#endif  // SDCARD_ENA
+bool DataLogger::_createNewLog(void)
+{
+  if (SD.exists("LAST_LOG_NUMBER.txt"))
+  {
+    File lastLogNumFile = SD.open("LAST_LOG_NUMBER.txt", FILE_READ);
+    String data = lastLogNumFile.readString();
+    _logNum = (data.toInt()+1);
+    lastLogNumFile.close();
+    SD.remove("LAST_LOG_NUMBER.txt");
+    lastLogNumFile = SD.open("LAST_LOG_NUMBER.txt", FILE_WRITE);
+    lastLogNumFile.println(_logNum);
+    lastLogNumFile.close();
+  }
+  else
+  {
+    File lastLogNumFile = SD.open("LAST_LOG_NUMBER.txt", FILE_WRITE);
+    _logNum = 1;
+    lastLogNumFile.println(_logNum);
+    lastLogNumFile.close();
+  }
+}
+
+bool DataLogger::start(void)
+{
+  _file = SD.open("log_" + String(_logNum) + ".txt", FILE_WRITE);
+  _file.close();
+}
+
+bool DataLogger::stop(void)
+{
+
+}
+
+bool DataLogger::write(String data)
+{
+  _file = SD.open("LOG_" + String(_logNum) + ".txt", FILE_WRITE);
+  _file.println(data);
+  _file.close();
+}
+
